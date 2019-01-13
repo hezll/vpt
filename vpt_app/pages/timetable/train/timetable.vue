@@ -1,29 +1,38 @@
 <template>
 	<view class="content uni-column" style="flex: 1;">
 		<view class="header-box">
-			<view @tap="gotoLineSelect">{{trainLines}}</view>
-			<view @tap="gotoStopSelect">Box Hill</view>
+			<view @tap="gotoLineSelect">
+				<image style="width:25px;height:25px" src="../../../static/images/track.png"></image>
+				<text>{{trainLines}}</text>
+			</view>
+			<view @tap="gotoStopSelect">
+				<image style="width:25px;height:25px" src="../../../static/images/stop.png"></image>
+				<text>{{stopName}}</text>
+			</view>
+			<picker @change="pickDirection" :range="directionArr">
+				<image style="width:25px;height:25px" src="../../../static/images/filter.png"></image>
+			</picker>
 		</view>
-
-		<scroll-view scroll-y style="height: 1000upx;" class="uni-list">
-			<view class="uni-list-cell" hover-class="uni-list-cell-hover" v-for="(item,index) in timetables" :key="index" @tap="openRunDetail"
-			 :data-runid="item.runId">
-				<view class="uni-list-cell-navigate uni-navigate-right" style="flex-direction: column;align-items: flex-start;">
-					<view style="align-items:center">
-						<view class="disruption-circle good"></view>
-						<text style="font-size:1.2em;padding-left: 15upx;font-weight:bold;text-transform: uppercase;">{{item.terminal}}</text>
-						<text v-show="item.express"> - Express</text>
-					</view>
-					<view style="padding-top: 10upx;font-size: 33upx;font-weight: 700;color:#8F8F94">
-						{{item.departureLocalTime}} - Platform {{item.platform}}
-						<text v-if="item.gap > 0">&nbsp;&nbsp;in {{item.gapText}} mins</text>
-						<text v-else-if="item.gap < 0">&nbsp;&nbsp;left {{item.gapText}} mins ago</text>
-						<text v-else>&nbsp;&nbsp;NOW</text>
+		<view style="position: fixed;margin-top:50px;margin-bottom:200uxp;width:100%;">
+			<scroll-view scroll-y :style="scrollHeight" class="uni-list">
+				<view class="uni-list-cell" hover-class="uni-list-cell-hover" v-for="(item,index) in timetables" :key="index" @tap="openRunDetail"
+				 :data-runid="item.runId" :data-terminal="item.terminal" :data-routeid="item.routeId" :data-departtime="item.departureLocalTime">
+					<view class="uni-list-cell-navigate uni-navigate-right" style="flex-direction: column;align-items: flex-start;">
+						<view style="align-items:center">
+							<view class="disruption-circle good"></view>
+							<text style="font-size:1.2em;padding-left: 15upx;font-weight:bold;text-transform: uppercase;">{{item.terminal}}</text>
+							<text v-show="item.express"> - Express</text>
+						</view>
+						<view style="padding-top: 10upx;font-size: 33upx;font-weight: 700;color:#8F8F94">
+							{{item.departureLocalTime}} - Platform {{item.platform}}
+							<text v-if="item.gap > 0">&nbsp;&nbsp;In {{item.gapText}}m</text>
+							<text v-else-if="item.gap < 0">&nbsp;&nbsp;Left {{item.gapText}}m ago</text>
+							<text v-else>&nbsp;&nbsp;NOW</text>
+						</view>
 					</view>
 				</view>
-			</view>
-		</scroll-view>
-
+			</scroll-view>
+		</view>
 	</view>
 </template>
 
@@ -35,62 +44,190 @@
 	export default {
 		data() {
 			return {
+				fullTimetables: [],
 				timetables: [],
 				trainLines: '',
+				stopName: '',
+				stopId: '',
+				trainRoutesMap: [],
+				directionIndex: 0,
+				scrollHeight: "1000upx",
+				directionArr: [],
+				directionIds: [],
+				index: 0,
 			};
 		},
 
 		onLoad: function() {
+			wx.getSystemInfo({
+				success({
+					windowHeight
+				}) {
+					console.info("onload height:" + windowHeight);
+				}
+			});
 			let ids = uni.getStorageSync("selectedRouteIds")
-			if(ids ==null || ids.length == 0) {
-				this.gotoTrainlines();
+			if (!ids) {
+				this.gotoLineSelect();
 			}
+		},
+		onReady() {
+			wx.getSystemInfo({
+				success: (res) => {
+					console.info("on ready height:" + res.windowHeight);
+					//#ifdef APP-PLUS
+					this.scrollHeight = "height:" + (res.windowHeight - 100) + "px";
+					//#endif
+					//#ifdef MP-WEIXIN
+					this.scrollHeight = "height:" + (res.windowHeight - 50) + "px";
+					//#endif
+
+
+				}
+			})
 		},
 
 		onShow: function() {
-			this.loadRoute();
+			console.log('timetable onshow');
+			this.trainRoutesMap = uni.getStorageSync("trainRoutesMap");
+			this.initDefaultStop();
 			let routeIds = uni.getStorageSync("selectedRouteIds");
-			if (routeIds.length == 1) {
-				let trainRoutesMap = uni.getStorageSync("trainRoutesMap");
-				this.trainLines = trainRoutesMap[routeIds[0]];
-
-			} else if (routeIds.length > 1) {
-				this.trainLines = routeIds.length + " lines"
+			if (routeIds) {
+				this.loadTimetable();
+				if (routeIds.length == 1) {
+					this.trainLines = this.trainRoutesMap[routeIds[0]];
+				} else if (routeIds.length > 1) {
+					this.trainLines = routeIds.length + " lines"
+				}
 			}
+
+		},
+
+		onPullDownRefresh() {
+			this.forceLoadingTimetable(uni.stopPullDownRefresh());
 		},
 
 		methods: {
-			loadRoute() {
-				// 				let stopId = uni.getStorageSync("stop");
-				// 				let routeType = uni.getStorageSync("routeType");
-				
+			loadTimetable() {
+				this.fullTimetables = uni.getStorageSync("fullTimetables");
+				if (!this.fullTimetables) {
+					this.forceLoadingTimetable();
+				}
+			},
+
+			forceLoadingTimetable(callback) {
+				console.log("refresh the timetable");
 				let body = {
 					routeType: '0',
-					stopId: '1071',
+					stopId: this.stopId,
 					routeIds: uni.getStorageSync("selectedRouteIds").join()
 				}
 				net.netUtil(con.DEPARTURE_URL, 'GET', body, ret => {
 					if (ret) {
-						this.timetables = this.filterTheTimetable(ret);
+						this.fullTimetables = this.filterTheTimetable(ret);
+						this.timetables = this.fullTimetables;
+						uni.setStorageSync("fullTimetables", this.fullTimetables);
+						uni.setStorageSync("timetables", this.timetables);
+						this.initDirections(this.timetables);
+
+						if (callback) {
+							callback();
+						}
 					}
 				});
 			},
 
+			initDefaultStop() {
+				console.info('init Default stop');
+				let selectedStop = uni.getStorageSync("selectedStop");
+				if (selectedStop) {
+					this.stopName = selectedStop['stopName'];
+					this.stopId = selectedStop['stopId'];
+				} else {
+					//第一次进入, 使用gps最近的车站
+					let nearme = uni.getStorageSync("nearMeStops");
+					if (nearme) {
+						this.stopName = nearme[0];
+						this.stopId = uni.getStorageSync('stopNameMap')[this.stopName];
+					} else {
+						this.stopName = "Flinders Street";
+						this.stopId = "1071";
+					}
+				}
+			},
+
 			filterTheTimetable(timetables) {
 				return timetables.filter(item => {
-					if (moment(item.departureUTCTime).isAfter(moment.utc().subtract(15, 'minutes'))) {
+					if (moment(item.departureUTCTime).isAfter(moment.utc().subtract(10, 'minutes'))) {
+						let du = moment.duration(moment(item.departureUTCTime) - moment(), 'ms');
 						item.gap = moment(item.departureUTCTime).diff(moment(), 'minutes');
-						item.gapText = Math.abs(item.gap);
+						var h = "";
+						if (du.get('hours') > 0) {
+							h = du.get('hours') + "h"
+						}
+						item.gapText = h + Math.abs(du.get('minutes')); //Math.abs(item.gap);
 						return item;
 					}
 				})
 			},
 
 			openRunDetail(e) {
-				var runid = e.currentTarget.dataset.runid;
+				let dataset = e.currentTarget.dataset;
+				let runId = dataset.runid;
+				let terminal = dataset.terminal;
+				let departTime = dataset.departtime;
+				let routeId = dataset.routeid;
+				let line = this.trainRoutesMap[routeId];
 				uni.navigateTo({
-					url: './runDetail/runDetail?runId=' + runid
+					url: './runDetail/runDetail?runId=' + runId + '&terminal=' + terminal + '&line=' + line + '&departTime=' +
+						departTime
 				});
+			},
+
+			initDirections(timetables) {
+				this.directionArr = [];
+				this.directionIds = [];
+				this.directionArr.push("All");
+				this.directionIds.push("888");
+				this.timetables.forEach(run => {
+					if (this.directionIds.indexOf(run.directionId) == -1) {
+						this.directionIds.push(run.directionId);
+					}
+				})
+
+				let directions = uni.getStorageSync("directions");
+				if (this.directionIds && directions) {
+					this.directionIds.forEach(d => {
+						if (d != 888) {
+							this.directionArr.push(directions[d]);
+						}
+					})
+				}
+			},
+
+			pickDirection(e) {
+				let index = e.target.value;
+				console.info();
+				if (this.directionIds[index] == 888) {
+					this.timetables = this.fullTimetables;
+				} else {
+					this.timetables = this.fullTimetables.filter(t => t.directionId == this.directionIds[index]);
+				}
+			},
+
+			changeDirection() {
+				let directions = uni.getStorageSync("directions");
+				if (directions) {
+					let totalSize = directions.length;
+					if (this.directionIndex == totalSize) {
+						this.directionIndex = 0;
+						this.timetables = this.fullTimetables;
+					} else {
+						this.timetables = this.fullTimetables.filter(t => t.directionId == directions[this.directionIndex]);
+						this.directionIndex++;
+					}
+					uni.setStorageSync("timetables", this.timetables);
+				}
 			},
 
 			gotoLineSelect() {
@@ -98,13 +235,13 @@
 					url: './lineSelect/lineSelect'
 				})
 			},
-			
+
 			gotoStopSelect() {
 				uni.navigateTo({
 					url: './stopSelect/stopSelect'
 				})
 			}
-			
+
 		}
 	}
 </script>
@@ -121,8 +258,10 @@
 	.header-box {
 		width: 100%;
 		display: flex;
-		padding: 20upx;
 		justify-content: space-around;
+		align-items: center;
+		height: 50px;
+		background-color: #0173b6;
 	}
 
 	.good {

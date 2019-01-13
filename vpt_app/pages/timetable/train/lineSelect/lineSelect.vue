@@ -35,12 +35,12 @@
 			let trainRoutesMap = {};
 			let routes = uni.getStorageSync("routes");
 			let selectedRouteIds = uni.getStorageSync("selectedRouteIds");
-			if (routes != null && routes != "") {
+			if (routes) {
 				this.trainRoutes = routes.filter(item => {
 					if (item.route_type == 0) {
 						trainRoutesMap[item.route_id] = item.route_name;
 						//initialise the checked item
-						if (selectedRouteIds.length > 0) {
+						if (selectedRouteIds) {
 							selectedRouteIds.filter(id => {
 								if (id == item.route_id) item.checked = true;
 							})
@@ -48,17 +48,17 @@
 						return item;
 					}
 				});
-			}
+			} 
 			uni.setStorageSync("trainRoutesMap", trainRoutesMap);
 			this.displayLineNumber();
-			//网络加载
-			this.loadingRouteData();
 		},
 
 		methods: {
 			checkboxChange: function(e) {
 				uni.setStorageSync("selectedRouteIds", e.detail.value);
 				this.displayLineNumber(e);
+				
+				uni.removeStorageSync("fullTimetables");
 			},
 
 			displayLineNumber() {
@@ -76,20 +76,6 @@
 					this.trainLineDisplay = "Select Your Train Lines";
 				}
 			},
-
-			loadingRouteData() {
-				uni.request({
-					url: 'https://timetableapi.ptv.vic.gov.au/v3/routes?devid=3000969&signature=602DAAA6BFB77BC2DF5B40FA15F3953FD974F3DF',
-					method: 'GET',
-					data: {},
-					success: res => {
-						uni.setStorageSync("routes", res.data.routes);
-						//this.trainRoutes = res.data.routes.filter(item => item.route_type == 0);
-					},
-					fail: () => {},
-					complete: () => {}
-				});
-			}
 		}
 	}
 </script>

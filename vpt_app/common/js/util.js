@@ -1,4 +1,6 @@
 import moment from '@/common/js/moment.min.js'
+import con from '@/common/js/constant.js'
+import net from '@/common/js/netUtil.js'
 
 function formatTime(time) {
 	if (typeof time !== 'number' || time < 0) {
@@ -36,6 +38,28 @@ function convertUTCTime(UTCTime) {
 	//var currentTime = formatter.format(new Date());
 	//console.log(currentTime, localTime);
 	return localTime;
+}
+
+function getLocation(callback) {
+	uni.getLocation({
+		type: 'wgs84',//'gcj02',
+		success: (res) => {
+			console.log('latitude：' + res.latitude);
+			console.log('longitude：' + res.longitude);
+			let body = {
+				"latitude": res.latitude,//-37.8119774,
+				"longitude": res.longitude,//144.955658
+			}
+			net.netUtil(con.STOP_GPS_URL, 'GET', body, ret => {
+				if (ret) {
+					uni.setStorageSync('nearMeStops', ret);
+					if (callback) {
+						callback(ret);
+					}
+				}
+			});
+		}
+	});
 }
 
 function formatLocation(longitude, latitude) {
@@ -94,4 +118,5 @@ module.exports = {
 	formatLocation: formatLocation,
 	dateUtils: dateUtils,
 	convertUTCTime: convertUTCTime,
+	getLocation: getLocation,
 }
