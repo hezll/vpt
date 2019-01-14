@@ -1,6 +1,18 @@
 <template>
 	<view class="content uni-column" style="flex: 1;">
+		<!-- <view>
+			<uni-drawer :visible="showDrawer" mode="left" @close="closeDrawer">
+				<uni-list>
+					<uni-list-item title="Item1"></uni-list-item>
+					<uni-list-item title="Item2"></uni-list-item>
+					<uni-list-item title="Item3" show-badge="true" badge-text="12"></uni-list-item>
+				</uni-list>
+			</uni-drawer>
+		</view> -->
 		<view class="header-box">
+			<!-- <view @tap="openDrawer">
+				<image style="width:25px;height:25px" src="../../../static/images/drawer.png"></image>
+			</view> -->
 			<view @tap="gotoLineSelect">
 				<image style="width:25px;height:25px" src="../../../static/images/track.png"></image>
 				<text>{{trainLines}}</text>
@@ -10,11 +22,11 @@
 				<text>{{stopName}}</text>
 			</view>
 			<picker @change="pickDirection" :range="directionArr">
-				<image style="width:25px;height:25px" src="../../../static/images/filter.png"></image>
+				<image style="display:flex;width:25px;height:25px" src="../../../static/images/filter.png"></image>
 			</picker>
 		</view>
 		<view style="position: fixed;margin-top:50px;margin-bottom:200uxp;width:100%;">
-			<scroll-view scroll-y :style="scrollHeight" class="uni-list">
+			<view scroll-y :style="scrollHeight" class="uni-list">
 				<view class="uni-list-cell" hover-class="uni-list-cell-hover" v-for="(item,index) in timetables" :key="index" @tap="openRunDetail"
 				 :data-runid="item.runId" :data-terminal="item.terminal" :data-routeid="item.routeId" :data-departtime="item.departureLocalTime">
 					<view class="uni-list-cell-navigate uni-navigate-right" style="flex-direction: column;align-items: flex-start;">
@@ -31,7 +43,7 @@
 						</view>
 					</view>
 				</view>
-			</scroll-view>
+			</view> <!--scroll-view -->
 		</view>
 	</view>
 </template>
@@ -40,10 +52,17 @@
 	import net from '@/common/js/netUtil.js'
 	import con from '@/common/js/constant.js'
 	import moment from '@/common/js/moment.min.js'
+	import uniDrawer from "@/components/uni-drawer/uni-drawer.vue"
 
 	export default {
+
+		components: {
+			uniDrawer
+		},
+
 		data() {
 			return {
+				showDrawer: false,
 				fullTimetables: [],
 				timetables: [],
 				trainLines: '',
@@ -59,19 +78,14 @@
 		},
 
 		onLoad: function() {
-			wx.getSystemInfo({
-				success({
-					windowHeight
-				}) {
-					console.info("onload height:" + windowHeight);
-				}
-			});
-			let ids = uni.getStorageSync("selectedRouteIds")
-			if (!ids) {
-				this.gotoLineSelect();
-			}
+			console.log('timetable on load');
+			// 			let ids = uni.getStorageSync("selectedRouteIds")
+			// 			if (!ids) {
+			// 				this.gotoLineSelect();
+			// 			}
 		},
-		onReady() {
+
+		onReady: function() {
 			wx.getSystemInfo({
 				success: (res) => {
 					console.info("on ready height:" + res.windowHeight);
@@ -81,14 +95,11 @@
 					//#ifdef MP-WEIXIN
 					this.scrollHeight = "height:" + (res.windowHeight - 50) + "px";
 					//#endif
-
-
 				}
 			})
 		},
 
 		onShow: function() {
-			console.log('timetable onshow');
 			this.trainRoutesMap = uni.getStorageSync("trainRoutesMap");
 			this.initDefaultStop();
 			let routeIds = uni.getStorageSync("selectedRouteIds");
@@ -138,7 +149,6 @@
 			},
 
 			initDefaultStop() {
-				console.info('init Default stop');
 				let selectedStop = uni.getStorageSync("selectedStop");
 				if (selectedStop) {
 					this.stopName = selectedStop['stopName'];
@@ -207,7 +217,6 @@
 
 			pickDirection(e) {
 				let index = e.target.value;
-				console.info();
 				if (this.directionIds[index] == 888) {
 					this.timetables = this.fullTimetables;
 				} else {
@@ -228,6 +237,14 @@
 					}
 					uni.setStorageSync("timetables", this.timetables);
 				}
+			},
+
+			openDrawer(e) {
+				this.showDrawer = true;
+			},
+			closeDrawer() {
+				console.info("close drawer:" + this.showDrawer);
+				this.showDrawer = false;
 			},
 
 			gotoLineSelect() {
@@ -261,7 +278,16 @@
 		justify-content: space-around;
 		align-items: center;
 		height: 50px;
-		background-color: #0173b6;
+		background-color: #0072ce;
+		color: white;
+		font-weight: bold;
+	}
+
+	.header-box text {
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		width:auto;
 	}
 
 	.good {

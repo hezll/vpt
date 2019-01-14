@@ -189,6 +189,9 @@
 						'stopName': key,
 						'stopId': this.stopNameMap[selectedStop]
 					});
+					let routeStopMap = uni.getStorageSync("routeStopMap");
+					let lines = routeStopMap[this.stopNameMap[selectedStop]];
+					uni.setStorageSync("selectedRouteIds", lines);
 					this.saveKeyword(key); //保存为历史 
 					//清楚timetable历史
 					uni.removeStorageSync("fullTimetables");

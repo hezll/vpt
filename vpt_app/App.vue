@@ -5,46 +5,91 @@
 
 	export default {
 		onLaunch: function() {
-			//util.getLocation();
-
-			if (!uni.getStorageSync('stopNameMap')) {
-				uni.request({
-					url: 'http://47.75.7.246:8080/api/ptv/initStopReverse', //仅为示例
-					success: (res) => {
-						uni.setStorageSync('stopNameMap', res.data);
-						console.log('init the stop name map');
+			util.getLocation(nearme => {
+				if (nearme) {
+					let selectedStop = uni.getStorageSync("selectedStop");
+					let ret = nearme.filter(s => s == selectedStop['stopName']);
+					if (ret.length == 0) {
+						let stopNameMap = uni.getStorageSync("stopNameMap");
+						let stopId = stopNameMap[nearme[0]];
+						uni.setStorageSync("selectedStop", {
+							'stopName': nearme[0],
+							'stopId': stopId,
+						});
+						let routeStopMap = uni.getStorageSync("routeStopMap");
+						let lines = routeStopMap[stopId];
+						uni.setStorageSync("selectedRouteIds", lines);
 					}
-				});
-			};
-			if (!uni.getStorageSync("routes")) {
-				uni.request({
-					url: 'https://timetableapi.ptv.vic.gov.au/v3/routes?devid=3000969&signature=602DAAA6BFB77BC2DF5B40FA15F3953FD974F3DF',
-					method: 'GET',
-					data: {},
-					success: res => {
-						uni.setStorageSync("routes", res.data.routes);
-						console.log('init the routes');
-					},
-					fail: () => {},
-					complete: () => {}
-				});
-			}
-			if (!uni.getStorageSync("directions")) {
-				net.netUtil(con.DIRECTION_URL, 'GET', {}, ret => {
-					if (ret) {
-						uni.setStorageSync("directions",ret);
-					}
-				});
-			}
+				}
+			});
+			this.initDirections();
+			this.initStopNameMap();
+			this.initRoutes();
+			this.initRouteStop();
 			uni.removeStorageSync("fullTimetables");
-
 		},
+
 		onShow: function() {
-			console.log('App Show')
+			//console.log('App Show')
 		},
 		onHide: function() {
-			console.log('App Hide')
+			//console.log('App Hide')
+		},
+		methods: {
+
+			initDirections() {
+				if (!uni.getStorageSync("directions")) {
+					net.netUtil(con.DIRECTION_URL, 'GET', {}, ret => {
+						if (ret) {
+							uni.setStorageSync("directions", ret);
+						}
+					});
+				}
+			},
+			initStopNameMap() {
+				if (!uni.getStorageSync('stopNameMap')) {
+					net.netUtil(con.STOP_NAME_MAP_URL, 'GET', {}, ret => {
+						if (ret) {
+							uni.setStorageSync('stopNameMap', ret);
+						}
+					});
+				};
+			},
+
+			initRoutes() {
+				if (!uni.getStorageSync("routes")) {
+					uni.request({
+						url: 'https://timetableapi.ptv.vic.gov.au/v3/routes?devid=3000969&signature=602DAAA6BFB77BC2DF5B40FA15F3953FD974F3DF',
+						method: 'GET',
+						data: {},
+						success: res => {
+							uni.setStorageSync("routes", res.data.routes);
+							console.log('init the routes');
+						}
+					});
+				}
+			},
+
+			initRouteStop() {
+				if (!uni.getStorageSync("routeStopMap")) {
+					net.netUtil(con.ROUTE_STOP_MAP_URL, 'GET', {}, ret => {
+						if (ret) {
+							uni.setStorageSync("routeStopMap", ret);
+						}
+					});
+				}
+			}
+
+
+			// 				let err, res;
+			// 				[err, res] = await uni.request({
+			// 					url: con.DIRECTION_URL,
+			// 					data: {}
+			// 				});
+			// 				console.log("数据：", err, res.data);
 		}
+
+
 	}
 </script>
 

@@ -1,5 +1,6 @@
 //var CON = require('./constan.js');
 import CON from '@/common/js/constant.js'
+
 /**
  * 网络请求的统一封装
  * params url地址 body网络请求中的body callback成功回调
@@ -12,7 +13,7 @@ function netUtil(url, method, body, callBack) {
 }
 
 function netHeadsUtil(url, method, heads, body, callBack ) {
-  uni.showLoading({})
+  uni.showLoading({title:'loading...'})
   var callBackData = {};
 
   //微信请求 
@@ -28,13 +29,13 @@ function netHeadsUtil(url, method, heads, body, callBack ) {
         uni.hideLoading();
       } else if (res.statusCode === 404 || res.statusCode === 400) {
         uni.showToast({
-          title: "无法找到数据",
+          title: "Not Data",
           duration: 1500,
           mask: true
         })
       } else if (500 <= res.statusCode && res.statusCode <= 599) {
         uni.showToast({
-          title: "系统故障,请稍后再试",
+          title: "Server error, please try again",
           duration: 1500,
           mask: true
         })
@@ -64,7 +65,6 @@ function netHeadsUtil(url, method, heads, body, callBack ) {
     }
   });
 }
-
 
 module.exports = {
   netUtil: netUtil,
