@@ -41,14 +41,14 @@ function convertUTCTime(UTCTime) {
 }
 
 function getLocation(callback) {
-	console.info('searching the location');
+	
 	uni.getLocation({
 		type: 'wgs84',//'gcj02',
 		success: (res) => {
-			console.log('GPS：[' + res.latitude +':'+res.longitude + ']');
+			//console.log('GPS：[' + res.latitude +':'+res.longitude + ']');
 			let body = {
-				"latitude": res.latitude,//-37.731856,
-				"longitude": res.longitude,//145.100844
+				"latitude": res.latitude, //res.latitude  : -37.731856,
+				"longitude": res.longitude,//res.longitude 145.100844 //
 			}
 			net.netUtil(con.STOP_GPS_URL, 'GET', body, ret => {
 				if (ret) {
@@ -58,7 +58,6 @@ function getLocation(callback) {
 					}
 				}
 			});
-			console.info('**************find the location');
 		}
 	});
 }

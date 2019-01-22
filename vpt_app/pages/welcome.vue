@@ -14,6 +14,9 @@
 		},
 
 		onLoad: function() {
+			//this.app();
+			
+			
 			uni.showLoading({
 				title: "loading..."
 			});
@@ -21,7 +24,7 @@
 				let directions = uni.getStorageSync("directions");
 				let routes = uni.getStorageSync("routes");
 				let stopNameMap = uni.getStorageSync("stopNameMap");
-				let routeStopMap = uni.getStorageSync("routeStopMap")
+				let routeStopMap = uni.getStorageSync("routeStopMap");
 				if (directions && routes && stopNameMap && routeStopMap) {
 					clearInterval(interval);
 					uni.switchTab({
@@ -30,7 +33,6 @@
 					uni.hideLoading();
 				}
 			}, 10);
-			console.info('switch go timetable');
 		}
 	}
 </script>

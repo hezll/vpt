@@ -48,13 +48,13 @@ function netHeadsUtil(url, method, heads, body, callBack ) {
     fail: function (res) {
       if (res.errMsg.includes("timeout")) {
         uni.showToast({
-          title: "服务器忙,请稍后再试",
+          title: "Server is busy, please try later",
           duration: 3000,
           mask: true
         })
       } else {
         uni.showToast({
-          title: "请检查网络",
+          title: "check your network",
           duration: 3000,
           mask: true
         })

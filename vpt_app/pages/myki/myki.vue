@@ -22,7 +22,7 @@
 </template>
 <script>
 	import uniDrawer from "@/components/uni-drawer/uni-drawer.vue"
-	
+
 	export default {
 		components: {
 			uniDrawer
@@ -34,7 +34,18 @@
 				title: 'Drawer'
 			}
 		},
+
+		onLoad: function() {
+			uni.setNavigationBarColor({
+				frontColor: '#ffffff',
+				backgroundColor: '#bed600',
+			})
+			uni.setNavigationBarTitle({
+				title: 'myki'
+			})
+		},
 		methods: {
+
 			show(e) {
 				console.info(e);
 				if (e === 'left') {

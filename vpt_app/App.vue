@@ -2,11 +2,13 @@
 	import util from '@/common/js/util.js'
 	import net from '@/common/js/netUtil.js'
 	import con from '@/common/js/constant.js'
+	import event from "@/common/js/event.js"
 
 	export default {
 		onLaunch: function() {
+			
 			util.getLocation(nearme => {
-				if (nearme) {
+				if (nearme && nearme.length > 0) {
 					let selectedStop = uni.getStorageSync("selectedStop");
 					let ret = nearme.filter(s => s == selectedStop['stopName']);
 					if (ret.length == 0) {
@@ -19,6 +21,8 @@
 						let routeStopMap = uni.getStorageSync("routeStopMap");
 						let lines = routeStopMap[stopId];
 						uni.setStorageSync("selectedRouteIds", lines);
+						event.emit('DataChanged', 'Log-Page-Btn-Press');
+						console.info("trigger the getting location");
 					}
 				}
 			});
@@ -63,8 +67,14 @@
 						method: 'GET',
 						data: {},
 						success: res => {
+							let trainRoutesMap = {};
 							uni.setStorageSync("routes", res.data.routes);
-							console.log('init the routes');
+							res.data.routes.filter(item => {
+								if (item.route_type == 0) {
+									trainRoutesMap[item.route_id] = item.route_name;
+								}
+							});
+							uni.setStorageSync("trainRoutesMap", trainRoutesMap);
 						}
 					});
 				}

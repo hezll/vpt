@@ -9,8 +9,14 @@
         {
             "path" : "pages/timetable/train/timetable",
             "style" : {
-                "navigationBarTitleText" : "Train Time Table",
-				"enablePullDownRefresh": true
+				"disableScroll": true,
+                "navigationBarTitleText" : "Time Table",
+				//#ifdef MP-WEIXIN
+				"enablePullDownRefresh": true,
+				//#endif
+				"app-plus": {
+                    
+                }
             }
         },
         {
@@ -25,7 +31,9 @@
         },
         {
             "path" : "pages/timetable/train/runDetail/runDetail",
-            "style" : {}
+            "style" : {
+				"disableScroll": true
+			}
         },
         {
             "path" : "pages/timetable/train/stopSelect/stopSelect",
@@ -35,9 +43,9 @@
         }
     ],
     "globalStyle" : {
-        "navigationBarTextStyle" : "black",
-        "navigationBarTitleText" : "VPT",
-        "navigationBarBackgroundColor" : "#F8F8F8",
+        "navigationBarTextStyle" : "white",
+        "navigationBarTitleText" : "Time Table",
+        "navigationBarBackgroundColor": "#0072ce",
         "backgroundColor" : "#F8F8F8"
     },
     "tabBar" : {

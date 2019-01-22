@@ -117,7 +117,7 @@
 			loadGPSKeyword() {
 				this.gpsKeywordList = uni.getStorageSync('nearMeStops');
 			},
-			
+
 			//
 			locateMe(search) {
 				util.getLocation(ret => {
@@ -184,14 +184,20 @@
 				key = key ? key : this.keyword ? this.keyword : this.defaultKeyword;
 				this.keyword = key;
 				let selectedStop = this.searchCache(key);
-				if (selectedStop.length == 1) {
+				if (selectedStop.length >= 1) {
 					uni.setStorageSync("selectedStop", {
 						'stopName': key,
-						'stopId': this.stopNameMap[selectedStop]
+						'stopId': this.stopNameMap[key]
 					});
-					let routeStopMap = uni.getStorageSync("routeStopMap");
-					let lines = routeStopMap[this.stopNameMap[selectedStop]];
-					uni.setStorageSync("selectedRouteIds", lines);
+
+					//cityloop的站点不改变route
+					let ret = this.hotKeywordList.filter(s => s == key);
+					if (ret.length == 0) {
+						let routeStopMap = uni.getStorageSync("routeStopMap");
+						let lines = routeStopMap[this.stopNameMap[key]];
+						uni.setStorageSync("selectedRouteIds", lines);
+					}
+
 					this.saveKeyword(key); //保存为历史 
 					//清楚timetable历史
 					uni.removeStorageSync("fullTimetables");

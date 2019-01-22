@@ -7,9 +7,7 @@
     "transformPx" : false,
     "app-plus" : {
         /* 5+App特有相关 */
-        "modules" : {
-            "Push" : {}
-        },
+        "modules" : {},
         /* 模块配置 */
         "distribute" : {
             /* 应用发布信息 */
@@ -55,10 +53,17 @@
                     "xxhdpi" : "unpackage/res/icons/144x144.png",
                     "xxxhdpi" : "unpackage/res/icons/192x192.png"
                 }
+            },
+            "splashscreen" : {
+                "android" : {
+                    "hdpi" : "/Users/David/Desktop/9696BF9A-061B-45F7-B137-F1A601BDF5EF.png",
+                    "xhdpi" : "/Users/David/Desktop/9696BF9A-061B-45F7-B137-F1A601BDF5EF.png",
+                    "xxhdpi" : "/Users/David/Desktop/9696BF9A-061B-45F7-B137-F1A601BDF5EF.png"
+                }
             }
         },
         "splashscreen" : {
-            "waiting" : true
+            "waiting" : false
         }
     },
     /* SDK配置 */
@@ -72,6 +77,11 @@
             "postcss" : false,
             "es6" : true,
             "minified" : true
+        },
+        "permission" : {
+            "scope.userLocation" : {
+                "desc" : "根据当前位置自动获取附近车站信息"
+            }
         }
     }
 }
