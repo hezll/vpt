@@ -17,17 +17,17 @@
 			<scroll-view scroll-y :style="scrollHeight" class="uni-list main_container">
 				<view class="uni-list-cell container" hover-class="uni-list-cell-hover" v-for="(item,index) in timetables" :key="index"
 				 @tap="openRunDetail" :data-runid="item.runId" :data-terminal="item.terminal" :data-routeid="item.routeId"
-				 :data-departtime="item.departureLocalTime">
+				 :data-departtime="item.departureLocalTime" :data-statuscolor="serviceStatusColor[item.routeId]">
 					<view class="uni-list-cell-navigate uni-navigate-right" style="flex-direction: column;align-items: flex-start;">
 						<view style="align-items:center">
 							<view class="disruption-circle" :style="serviceStatus[item.routeId]"></view>
 							<text style="font-size:1.2em;padding-left: 15upx;font-weight:bold;text-transform: uppercase;">{{item.terminal}}</text>
-							<text v-show="item.express"> - Express</text>
+							<text style="font-weight: bold;font-size:0.7em;" v-show="item.express"> - Express</text>
 						</view>
 						<view style="padding-top: 10upx;font-size: 33upx;font-weight: 700;color:#8F8F94">
 							{{item.departureLocalTime}}<span v-show="item.platform"> - Platform {{item.platform}}</span>
-							<text v-if="item.gap > 0">&nbsp;&nbsp;In {{item.gapText}}m</text>
-							<text v-else-if="item.gap < 0">&nbsp;&nbsp;Left {{item.gapText}}m ago</text>
+							<text v-if="item.gap > 0">&nbsp;&nbsp;In {{item.gapText}}mins</text>
+							<text v-else-if="item.gap < 0">&nbsp;&nbsp;Left {{item.gapText}}mins ago</text>
 							<text v-else>&nbsp;&nbsp;NOW</text>
 						</view>
 					</view>
@@ -74,6 +74,7 @@
 					"background-color:#66cc33;", "background-color:#66cc33;", "background-color:#66cc33;",
 					"background-color:#66cc33;",
 				],
+				serviceStatusColor:[],
 				status: "background-color:#66cc33;",
 
 			};
@@ -215,6 +216,7 @@
 						uni.setStorageSync("disruptions", ret);
 						ret.forEach(d => {
 							this.serviceStatus[d.routeId] = "background-color:" + d.colour;
+							this.serviceStatusColor[d.routeId] = d.colour;
 							this.status = "1"
 						})
 					}
@@ -229,9 +231,10 @@
 				let routeId = dataset.routeid;
 				let line = this.trainRoutesMap[routeId];
 				let stop = this.stopName;
+				let statusColor = dataset.statuscolor;
 				uni.navigateTo({
 					url: './runDetail/runDetail?runId=' + runId + '&terminal=' + terminal + '&line=' + line + '&departTime=' +
-						departTime + '&routeId=' + routeId + '&stop=' + stop
+						departTime + '&routeId=' + routeId + '&stop=' + stop +'&statusColor='+statusColor
 				});
 			},
 

@@ -1,5 +1,8 @@
 import Vue from 'vue'
 import App from './App'
+import faicon from './components/fa-icon/fa-icon.vue'
+
+Vue.component('faicon',faicon)
 
 Vue.config.productionTip = false
 
