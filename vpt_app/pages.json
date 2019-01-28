@@ -1,22 +1,15 @@
 {
     "pages" : [
         //pages数组中第一项表示应用启动页，参考：https://uniapp.dcloud.io/collocation/pages
-		{
-			"path" : "pages/welcome",
-			"style" : {
-			}
-		},
         {
             "path" : "pages/timetable/train/timetable",
             "style" : {
-				"disableScroll": true,
+                "disableScroll" : true,
                 "navigationBarTitleText" : "Time Table",
-				//#ifdef MP-WEIXIN
-				"enablePullDownRefresh": true,
-				//#endif
-				"app-plus": {
-                    
-                }
+                //#ifdef MP-WEIXIN
+                "enablePullDownRefresh" : true,
+                //#endif
+                "app-plus" : {}
             }
         },
         {
@@ -32,20 +25,24 @@
         {
             "path" : "pages/timetable/train/runDetail/runDetail",
             "style" : {
-				"disableScroll": true
-			}
+                "disableScroll" : true
+            }
         },
         {
             "path" : "pages/timetable/train/stopSelect/stopSelect",
             "style" : {
-				"navigationBarTitleText" : "Select A Train Stop"
-			}
+                "navigationBarTitleText" : "Select A Train Stop"
+            }
+        },
+        {
+            "path" : "pages/timetable/train/runDetail/stopDetail/stopDetail",
+            "style" : {}
         }
     ],
     "globalStyle" : {
         "navigationBarTextStyle" : "white",
         "navigationBarTitleText" : "Time Table",
-        "navigationBarBackgroundColor": "#0072ce",
+        "navigationBarBackgroundColor" : "#0072ce",
         "backgroundColor" : "#F8F8F8"
     },
     "tabBar" : {
@@ -58,19 +55,19 @@
                 "pagePath" : "pages/timetable/train/timetable",
                 "iconPath" : "static/images/train-inactive.png",
                 "selectedIconPath" : "static/images/train.png",
-				"text": "Train"
+                "text" : "Train"
             },
             {
                 "pagePath" : "pages/myki/myki",
                 "iconPath" : "static/images/myki-inactive.png",
                 "selectedIconPath" : "static/images/myki.png",
-				"text": "Myki"
+                "text" : "Myki"
             }
         ]
     },
-	"permission": {
-    "scope.userLocation": {
-      "desc": "你的位置信息将用于程序位置接口的效果展示"
+    "permission" : {
+        "scope.userLocation" : {
+            "desc" : "你的位置信息将用于程序位置接口的效果展示"
+        }
     }
-  }
 }

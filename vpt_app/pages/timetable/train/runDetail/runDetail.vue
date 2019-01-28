@@ -9,23 +9,25 @@
 				<view>{{terminal}}</view>
 				<view style="align-items: center;" @tap="getMore">
 					<text style="padding-right: 12upx;">{{status}}</text>
-					<view class="wave solid warning">
+					<view class="goodservice-circle" v-if="isGoodService" />
+					<view :class="statusColor" v-else>
 						<view class="circle"></view>
-						<faicon type="volume-up" :color="statusColor" size="16"></faicon>
+						<faicon type="info" size="18"></faicon>
 					</view>
 				</view>
 			</view>
 		</view>
-		<view class="notice-bar" v-show=showNotice>
+		<view class="notice-bar" v-show="showNotice" @tap="getMore">
 			<view class="uni-list-cell" v-for="(item,index) in descriptions" :key="index">
-				<uni-notice-bar show-icon="true" :text="item">
-				</uni-notice-bar>
+				<view class="uni-list-cell-navigate disruption-info">
+					{{item}}
+				</view>
 			</view>
 		</view>
 		<view style="flex-direction: column;">
 			<scroll-view scroll-y :style="scrollHeight" class="uni-list">
-				<view class="uni-list-cell" hover-class="uni-list-cell-hover" v-for="(item,index) in stops" :key="index" @tap="openStop"
-				 :data-stopId="item.stopId">
+				<view class="uni-list-cell" hover-class="uni-list-cell-hover" v-for="(item,index) in stops" :key="index"
+				 :data-stopid="item.stopId" @tap="gotoStopDetail">
 					<view class="uni-list-cell-navigate uni-navigate-right" style="flex-direction: column;align-items: flex-start;">
 						<span v-if="item.stopId != 0">
 							<view style="align-items:center">
@@ -67,7 +69,8 @@
 				status: 'Good Service',
 				statusColor: '',
 				descriptions: [],
-				showNotice: true,
+				showNotice: false,
+				isGoodService: true,
 			};
 		},
 
@@ -75,8 +78,6 @@
 			this.terminal = e.terminal;
 			this.line = e.line;
 			this.departTime = e.departTime;
-			this.statusColor = e.statusColor;
-			console.info("status color:" + this.statusColor);
 			let body = {
 				routeType: '0',
 				runId: e.runId
@@ -104,8 +105,21 @@
 				let disruption = disruptions.filter(d => d.routeId == e.routeId);
 				if (disruption.length > 0) {
 					this.status = disruption[0].type;
-					this.statusColor = "background-color:" + disruption[0].colour;
 					this.descriptions = disruption[0].descriptions;
+					if (this.status.indexOf('Info') != -1) {
+						this.statusColor = 'info';
+					} else if (this.status.indexOf('Minor') != -1) {
+						this.statusColor = 'minor';
+						this.showNotice = true;
+					} else if (this.status.indexOf('Major') != -1) {
+						this.statusColor = 'major';
+						this.showNotice = true;
+					} else if (this.status.indexOf('Suspended') != -1) {
+						this.statusColor = 'suspended';
+						this.showNotice = true;
+					}
+					this.statusColor = this.statusColor + ' wave solid';
+					this.isGoodService = false;
 				}
 			}
 
@@ -117,13 +131,22 @@
 		onReady: function() {
 			wx.getSystemInfo({
 				success: (res) => {
-					this.scrollHeight = "height:" + (res.windowHeight - 81) + "px";
+					this.scrollHeight = "height:" + (res.windowHeight - 83) + "px";
 				}
 			})
 		},
 		methods: {
 			getMore: function() {
 				this.showNotice = !this.showNotice;
+			},
+			
+			gotoStopDetail(e) {
+				let dataset = e.currentTarget.dataset;
+				let stopId = dataset.stopid;
+				console.info("stopId:" + stopId);
+				uni.navigateTo({
+					url: './stopDetail/stopDetail?stopId=' + stopId
+				})
 			}
 		}
 	}
@@ -160,75 +183,101 @@
 		background-color: #66cc33;
 	}
 
-	 .disruption-circle {
-		height: 35upx;
-		width: 35upx;
+	.goodservice-circle {
+		height: 28upx;
+		width: 28upx;
 		border-radius: 50%;
-		display: inline-block;
-	} 
+		/* display: inline-block; */
+		background-color: #66cc33;
+	}
 
 	.notice-bar {
 		flex-direction: column;
 		background-color: #fffbe8;
 		position: absolute;
-		top: 81px;
+		top: 83px;
 		width: 100%;
 		z-index: 1;
 	}
-	
+
+	.disruption-info {
+		background-color: #f78248;
+		color: white;
+		font-size: 30upx;
+		line-height: 40upx;
+		border-bottom: 1upx solid white;
+	}
+
 	.wave {
-			position: relative;
-		   width: 55upx;
-		    height: 55upx;
-			border-radius: 50%;
-			display: flex;
-			justify-content: center;
-			align-items: center;
+		position: relative;
+		width: 60upx;
+		height: 60upx;
+		border-radius: 50%;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
+
+	.wave .circle {
+		position: absolute;
+		border-radius: 50%;
+		opacity: 0;
+	}
+
+
+
+	/* 波动效果 */
+	.wave.solid .circle {
+		width: 100%;
+		height: 100%;
+		background: #fff;
+	}
+
+	.wave.solid .circle:first-child {
+		animation: circle-opacity 2s infinite;
+	}
+
+	.wave.solid.info {
+		color: #66cc33;
+	}
+
+	.wave.solid.info .circle {
+		background: #66cc33;
+	}
+
+	.wave.solid.minor {
+		color: #ee9b00;
+	}
+
+	.wave.solid.minor .circle {
+		background: #ee9b00;
+	}
+
+	.wave.solid.major {
+		color: #66cc33;
+	}
+
+	.wave.solid.major .circle {
+		background: #66cc33;
+	}
+
+	.wave.solid.suspended {
+		color: #1f1f1f;
+	}
+
+	.wave.solid.suspended .circle {
+		background: #1f1f1f;
+	}
+
+	@keyframes circle-opacity {
+		from {
+			opacity: 1;
+			transform: scale(0);
 		}
- 
-		.wave .circle {
-		    position: absolute;
-		    border-radius: 50%;
-		    opacity: 0;
+
+		to {
+			opacity: 0;
+			transform: scale(1);
 		}
- 
-		
- 
-		/* 波动效果 */
-		.wave.solid .circle{
-			width: 100%;
-    		height: 100%;
-		    background: #fff;
-		}
- 
-		.wave.solid .circle:first-child {
-			animation: circle-opacity 2s infinite;
-		}
- 
-		/* .wave.solid.danger {
-			color: red;
-		}
- 
-		.wave.solid.danger .circle{
-			background: red;
-		} */
-		
-		.wave.solid.warning {
-			color: #66cc33;
-		}
- 
-		.wave.solid.warning .circle{
-			background: #66cc33;
-		}
- 
-		@keyframes circle-opacity{
-		    from {
-		        opacity: 1;
-		        transform: scale(0);
-		    }
-		    to {
-		        opacity: 0;
-		        transform: scale(1);
-		    }
-		}
+	}
 </style>

@@ -8,7 +8,7 @@
 				<view style="justify-content: space-between;border-bottom: 1upx #D9D9D9 solid">
 				</view>
 				<label class="checkbox" v-for="item in trainRoutes" :key="item.route_id">
-					<view style="justify-content:space-between;padding:20upx;border-bottom: 1upx #D9D9D9 solid;font-weight: bold;">
+					<view class="checkbox-lable">
 						<view>{{item.route_name}} Line</view>
 						<view>
 							<checkbox :value="item.route_id" :checked="item.checked" />
@@ -26,8 +26,12 @@
 		data() {
 			return {
 				trainRoutes: [],
-				//trainRoutesMap:{},
-				trainLineDisplay: "Select Your Train Lines"
+				trainLineDisplay: "Select Your Train Lines",
+				v: '1',
+				allSelected: false,
+				allTrainRoutes: ["all", "1", "2", "3", "4", "5", "6", "7", "8", "9", "11", "12", "13", "14", "15", "16", "17",
+					"1482"
+				]
 			};
 		},
 
@@ -35,6 +39,10 @@
 			let trainRoutesMap = {};
 			let routes = uni.getStorageSync("routes");
 			let selectedRouteIds = uni.getStorageSync("selectedRouteIds");
+			let allSelected = {
+				'route_name': 'All',
+				'route_id': 'all'
+			};
 			if (routes) {
 				this.trainRoutes = routes.filter(item => {
 					if (item.route_type == 0) {
@@ -42,27 +50,74 @@
 						//initialise the checked item
 						if (selectedRouteIds) {
 							selectedRouteIds.filter(id => {
-								if (id == item.route_id) item.checked = true;
+								if (id == 'all') {
+									allSelected.checked = true;
+								} else if (id == item.route_id) item.checked = true;
 							})
 						}
 						return item;
 					}
 				});
-			} 
-			uni.setStorageSync("trainRoutesMap", trainRoutesMap);
-			this.displayLineNumber();
+
+				this.trainRoutes.unshift(allSelected);
+			}
+			this.displayLineNumber(selectedRouteIds);
+			uni.setStorage({
+				key: "trainRoutesMap",
+				data: trainRoutesMap
+			});
+
 		},
 
 		methods: {
 			checkboxChange: function(e) {
-				uni.setStorageSync("selectedRouteIds", e.detail.value);
-				this.displayLineNumber(e);
-				
-				uni.removeStorageSync("fullTimetables");
+				var oldValues = this.trainRoutes, //原来的值
+					selectedRoutIds = e.detail.value; //新选的值
+				if (!oldValues[0].checked && selectedRoutIds.indexOf('all') != -1) {
+					//原来没有选择all,现在tick all,则全选
+					selectedRoutIds = this.allTrainRoutes;
+					this.trainRoutes.forEach(item => {
+						item.checked = true;
+					})
+
+				} else if (!oldValues[0].checked && selectedRoutIds.indexOf('all') == -1 && selectedRoutIds.length == 17) {
+					//原来没有选择all,现在也没有all,但是全选其他,自动选择all
+					oldValues[0].checked = true;
+					selectedRoutIds = this.allTrainRoutes;
+
+				} else if (oldValues[0].checked && selectedRoutIds.indexOf('all') == -1) {
+					//原来选择all,现在untick all,则全不选
+					selectedRoutIds = [];
+					this.trainRoutes.forEach(item => {
+						item.checked = false;
+					})
+				} else if (oldValues[0].checked && selectedRoutIds.length < 18) {
+					//原来选择all,现在untick 其他一个,则all自动untick
+					oldValues[0].checked = false;
+					selectedRoutIds.splice(selectedRoutIds.indexOf('all'), 1);
+
+				} else {
+					for (var i = 0, lenI = oldValues.length; i < lenI; ++i) {
+						oldValues[i].checked = false;
+						for (var j = 0, lenJ = selectedRoutIds.length; j < lenJ; ++j) {
+							if (oldValues[i].route_id == selectedRoutIds[j]) {
+								oldValues[i].checked = true;
+								break
+							}
+						}
+					}
+				}
+
+				this.trainRoutes = oldValues;
+				uni.setStorageSync('selectedRouteIds', selectedRoutIds);
+				this.displayLineNumber(selectedRoutIds);
+				uni.removeStorage({
+					key: 'fullTimetables'
+				});
 			},
 
-			displayLineNumber() {
-				let routeIds = uni.getStorageSync("selectedRouteIds");
+			
+			displayLineNumber(routeIds) {
 				if (routeIds != null && routeIds.length > 0) {
 					let number = routeIds.length;
 					if (number == 1) {
@@ -70,6 +125,7 @@
 						let trainName = trainRoutesMap[routeIds[0]];
 						this.trainLineDisplay = trainName + " line";
 					} else {
+						number == 18 ? --number : number;
 						this.trainLineDisplay = number + " lines";
 					}
 				} else {
@@ -81,5 +137,10 @@
 </script>
 
 <style>
-
+	.checkbox-lable {
+		justify-content: space-between;
+		padding: 20upx;
+		border-bottom: 1upx #D9D9D9 solid;
+		font-weight: bold;
+	}
 </style>

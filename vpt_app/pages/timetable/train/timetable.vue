@@ -6,7 +6,7 @@
 				<text>{{trainLines}}</text>
 			</view>
 			<view @tap="gotoStopSelect">
-				<image style="width:25px;height:25px" src="../../../static/images/stop.png"></image>
+				<image style="width:28px;height:28px" src="../../../static/images/stop.png"></image>
 				<text>{{stopName}}</text>
 			</view>
 			<picker @change="pickDirection" :range="directionArr">
@@ -17,14 +17,14 @@
 			<scroll-view scroll-y :style="scrollHeight" class="uni-list main_container">
 				<view class="uni-list-cell container" hover-class="uni-list-cell-hover" v-for="(item,index) in timetables" :key="index"
 				 @tap="openRunDetail" :data-runid="item.runId" :data-terminal="item.terminal" :data-routeid="item.routeId"
-				 :data-departtime="item.departureLocalTime" :data-statuscolor="serviceStatusColor[item.routeId]">
-					<view class="uni-list-cell-navigate uni-navigate-right" style="flex-direction: column;align-items: flex-start;">
-						<view style="align-items:center">
+				 :data-departtime="item.departureLocalTime" data-status="status">
+					<view class="uni-list-cell-navigate uni-navigate-right cell-align" :style="item.greyCell">
+						<view style="align-items:center;padding: 4upx;">
 							<view class="disruption-circle" :style="serviceStatus[item.routeId]"></view>
-							<text style="font-size:1.2em;padding-left: 15upx;font-weight:bold;text-transform: uppercase;">{{item.terminal}}</text>
+							<text class="terminal">{{item.terminal}}</text>
 							<text style="font-weight: bold;font-size:0.7em;" v-show="item.express"> - Express</text>
 						</view>
-						<view style="padding-top: 10upx;font-size: 33upx;font-weight: 700;color:#8F8F94">
+						<view style="padding-top: 10upx;font-size: 33upx;font-weight:700;color:#8F8F94">
 							{{item.departureLocalTime}}<span v-show="item.platform"> - Platform {{item.platform}}</span>
 							<text v-if="item.gap > 0">&nbsp;&nbsp;In {{item.gapText}}mins</text>
 							<text v-else-if="item.gap < 0">&nbsp;&nbsp;Left {{item.gapText}}mins ago</text>
@@ -74,7 +74,6 @@
 					"background-color:#66cc33;", "background-color:#66cc33;", "background-color:#66cc33;",
 					"background-color:#66cc33;",
 				],
-				serviceStatusColor:[],
 				status: "background-color:#66cc33;",
 
 			};
@@ -128,10 +127,14 @@
 			},
 
 			forceLoadingTimetable(callback) {
+				let selectedRouteIds = uni.getStorageSync("selectedRouteIds");
+				if (selectedRouteIds.indexOf('all') != -1) {
+					selectedRouteIds.splice(selectedRouteIds.indexOf('all'), 1);
+				}
 				let body = {
 					routeType: '0',
 					stopId: this.stopId,
-					routeIds: uni.getStorageSync("selectedRouteIds").join()
+					routeIds: selectedRouteIds.join()
 				}
 				net.netUtil(con.DEPARTURE_URL, 'GET', body, ret => {
 					if (ret) {
@@ -143,7 +146,7 @@
 						this.initDirections(this.timetables);
 
 						if (callback) {
-							callback();
+							callback;
 						}
 					}
 				});
@@ -155,7 +158,8 @@
 				if (routeIds.length == 1) {
 					this.trainLines = this.trainRoutesMap[routeIds[0]];
 				} else if (routeIds.length > 1) {
-					this.trainLines = routeIds.length + " lines"
+					let number = routeIds.length == 18 ? 17:routeIds.length;
+					this.trainLines = number + " lines"
 				}
 			},
 
@@ -194,6 +198,9 @@
 					if (moment(item.departureUTCTime).isAfter(moment.utc().subtract(10, 'minutes'))) {
 						let du = moment.duration(moment(item.departureUTCTime) - moment(), 'ms');
 						item.gap = moment(item.departureUTCTime).diff(moment(), 'minutes');
+						if (item.gap < 0) {
+							item.greyCell = "background-color:#ededed";
+						}
 						var h = "";
 						if (du.get('hours') > 0) {
 							h = du.get('hours') + "h"
@@ -213,10 +220,13 @@
 				}
 				net.netUtil(con.DISRUPTION_URL, 'GET', body, ret => {
 					if (ret) {
-						uni.setStorageSync("disruptions", ret);
+						uni.setStorage({
+							key: "disruptions",
+							data: ret
+						})
 						ret.forEach(d => {
+							d.colour = "#ffd500" == d.colour ? "#66cc33" : d.colour
 							this.serviceStatus[d.routeId] = "background-color:" + d.colour;
-							this.serviceStatusColor[d.routeId] = d.colour;
 							this.status = "1"
 						})
 					}
@@ -234,7 +244,7 @@
 				let statusColor = dataset.statuscolor;
 				uni.navigateTo({
 					url: './runDetail/runDetail?runId=' + runId + '&terminal=' + terminal + '&line=' + line + '&departTime=' +
-						departTime + '&routeId=' + routeId + '&stop=' + stop +'&statusColor='+statusColor
+						departTime + '&routeId=' + routeId + '&stop=' + stop
 				});
 			},
 
@@ -316,6 +326,7 @@
 <style>
 	.main_container {
 		position: relative;
+		background-color: #f7f7f7;
 		/* width: 750rpx; */
 		/* height: 100vh; */
 	}
@@ -323,10 +334,15 @@
 	.container {
 		/* position: fixed; */
 		/*使用absolute的原因是因为为了防止第一个子视图有margin-top时，造成顶部留白的情况*/
-		left: 0;
-		top: 0;
-		width: 100%;
-		/* padding-bottom: 20rpx; */
+		/* left: 0;
+		top: 0; */
+		margin: 15upx 13upx;
+		border: 1px solid #ddd;
+		border-left: 4px solid #0072ce;
+		background-color: #fff;
+		border-radius: 5px;
+		border-bottom: 2px solid #e9e9e9;
+		border-right: 2px solid #e9e9e9;
 	}
 
 	.uni-media-list-body {
@@ -355,12 +371,16 @@
 		width: auto;
 	}
 
-	.good {
-		background-color: #66cc33;
+	.cell-align {
+		flex-direction: column;
+		align-items: flex-start;
 	}
 
-	.warning {
-		background-color: #ffd500;
+	.terminal {
+		font-size: 1.2em;
+		padding-left: 15upx;
+		font-weight: bold;
+		text-transform: uppercase;
 	}
 
 	.disruption-circle {
