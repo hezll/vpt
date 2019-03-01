@@ -33,14 +33,14 @@
 			</picker>
 		</view>
 		<view style="flex-direction: column;">
-			<scroll-view scroll-y :style="scrollHeight" class="uni-list main_container">
+			<scroll-view scroll-y :style="scrollHeight" class="uni-list main_container" @scrolltolower="pagination">
 				<view class="container" hover-class="uni-list-cell-hover" v-for="(item,index) in timetables" :key="index" @tap="openRunDetail"
 				 :data-runid="item.runId" :data-terminal="item.terminal" :data-routeid="item.routeId" :data-departtime="item.departureLocalTime"
 				 data-status="status">
 					<view class="uni-list-cell-navigate cell-align" :style="item.greyCell">
 						<view style="flex-direction: column;">
 							<view style="align-items:center;padding:4upx;width:500rpx">
-								<view v-if="item.minorDelay" class="disruption-circle" style="background-color:#1ba035;"/>
+								<view v-if="item.minorDelay" class="disruption-circle" style="background-color:#1ba035;" />
 								<view v-else class="disruption-circle" :style="serviceStatus[item.routeId]"></view>
 								<text class="terminal">{{item.terminal}}</text>
 								<text class="express" v-show="item.express"> - Express</text>
@@ -94,7 +94,8 @@
 				showRigth: false,
 				showLeft: true,
 				title: 'Drawer',
-
+				page: 0,
+				pageSize: 100,
 				fullTimetables: [],
 				timetables: [],
 				trainLines: '',
@@ -149,17 +150,11 @@
 		},
 
 		onShow: function() {
-			this.pastTime = uni.getStorageSync("pastTime");
-			if(!this.pastTime && this.pastTime!=0) {
-				this.pastTime = 10;
-			}
 			this.initDefaultStop();
-			this.loadTimetable();
+			//this.loadTimetable();
+			this.forceLoadingTimetable();
 			this.renderLines();
-		},
-
-		onPullDownRefresh() {
-			this.forceLoadingTimetable(uni.stopPullDownRefresh());
+			this.pastTime = uni.getStorageSync("pastTime");
 		},
 
 		onShareAppMessage(res) {
@@ -170,12 +165,12 @@
 		},
 
 		methods: {
-			loadTimetable() {
-				this.fullTimetables = uni.getStorageSync("fullTimetables");
-				if (!this.fullTimetables) {
-					this.forceLoadingTimetable();
-				}
-			},
+// 			loadTimetable() {
+// 				this.fullTimetables = uni.getStorageSync("fullTimetables");
+// 				if (!this.fullTimetables) {
+// 					this.forceLoadingTimetable();
+// 				}
+// 			},
 
 			forceLoadingTimetable(callback) {
 				let selectedRouteIds = uni.getStorageSync("selectedRouteIds");
@@ -189,15 +184,12 @@
 				}
 				net.netUtil(con.DEPARTURE_URL, 'GET', body, res => {
 					if (res.data) {
-						this.fullTimetables = this.filterTheTimetable(res.data);
-						this.timetables = this.fullTimetables;
-						uni.setStorageSync("fullTimetables", this.fullTimetables);
-						uni.setStorageSync("timetables", this.timetables);
+						this.page = 0;
+						this.timetables = [];
+						this.fullTimetables = res.data;
+						//uni.setStorageSync("fullTimetables", this.fullTimetables);
+						this.pagination();
 						this.initDirections(this.timetables);
-
-						// 						if (callback) {
-						// 							callback;
-						// 						}
 					}
 				});
 			},
@@ -256,7 +248,7 @@
 							h = du.get('hours') + "h "
 						}
 						item.gapText = h + Math.abs(du.get('minutes'));
-						if(moment(item.estimatedDepartureUTC).isAfter(moment(item.scheduledDepartureUTC).add(2,'minutes'))) {
+						if (moment(item.estimatedDepartureUTC).isAfter(moment(item.scheduledDepartureUTC).add(2, 'minutes'))) {
 							item.minorDelay = true;
 						}
 						return item;
@@ -354,6 +346,17 @@
 
 			refreshTimeTable() {
 				this.forceLoadingTimetable();
+			},
+
+			/**
+			 * 每次loading 100条数据
+			 */
+			pagination() {
+				if (this.page <= Math.ceil(this.fullTimetables.length / this.pageSize)) {
+					let batch = this.fullTimetables.slice(this.page * this.pageSize, ++this.page * this.pageSize);
+					let filtered = this.filterTheTimetable(batch);
+					this.timetables = this.timetables.concat(filtered);
+				}
 			},
 
 			openDrawer(e) {
